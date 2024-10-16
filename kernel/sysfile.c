@@ -66,6 +66,38 @@ sys_dup(void)
 }
 
 uint64
+sys_dup2(void)
+{
+  int oldfd, newfd;
+  struct file *f;
+  
+  //从用户进程获取参数oldfd和newfd
+  if(argfd(0, &oldfd, &f) < 0)
+    return -1;
+  if(argfd(1, &newfd, &f) < 0)
+    return -1;
+
+  //如果oldfd和newfd相同，直接返回newfd
+  if(oldfd == newfd)
+    return newfd;
+
+  //如果 newfd 已经打开，先关闭
+  if(newfd >= 0 && newfd < NOFILE && myproc()->ofile[newfd]){
+    fileclose(myproc()->ofile[newfd]);
+    myproc()->ofile[newfd] = 0;
+  }
+
+  //分配newfd,复制oldfd文件对象到newfd
+  if(fdalloc(f) != newfd)
+    return -1;
+
+  //递增文件的引用计数
+  filedup(f); 
+
+  return newfd;
+}
+
+uint64
 sys_read(void)
 {
   struct file *f;
