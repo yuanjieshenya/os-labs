@@ -194,6 +194,7 @@ UPROGS=\
 	$U/_uthread\
 	$U/_uthread_priority\
 	$U/_uthread_fcfs\
+	$U/_uthread_shorterfirst\
 
 
 
@@ -236,6 +237,10 @@ $U/_uthread_priority: $U/uthread_priority.o $U/uthread_switch.o $(ULIB)
 $U/_uthread_fcfs: $U/uthread_fcfs.o $U/uthread_switch.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $U/_uthread_fcfs $U/uthread_fcfs.o $U/uthread_switch.o $(ULIB)
 	$(OBJDUMP) -S $U/_uthread_fcfs > $U/uthread_fcfs.asm
+
+$U/_uthread_shorterfirst: $U/uthread_shorterfirst.o $U/uthread_switch.o $(ULIB)
+	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $U/_uthread_shorterfirst $U/uthread_shorterfirst.o $U/uthread_switch.o $(ULIB)
+	$(OBJDUMP) -S $U/_uthread_shorterfirst > $U/uthread_shorterfirst.asm
 
 ph: notxv6/ph.c
 	gcc -o ph -g -O2 $(XCFLAGS) notxv6/ph.c -pthread
