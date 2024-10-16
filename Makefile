@@ -195,7 +195,7 @@ UPROGS=\
 	$U/_uthread_priority\
 	$U/_uthread_fcfs\
 	$U/_uthread_sjf\
-
+	$U/_uthread_hrrn\
 
 
 ifeq ($(LAB),$(filter $(LAB), lock))

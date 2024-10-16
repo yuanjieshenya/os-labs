@@ -8,11 +8,11 @@
 #define RUNNABLE    0x2
 
 #define STACK_SIZE  8192
-#define MAX_THREAD  7  //支持新线程
+#define MAX_THREAD  7  // 支持新线程
 
-int current_time = 0; //模拟系统当时时间
+int current_time = 0; // 模拟系统当时时间
 
-//定义一个存寄存器的结构
+// 定义存寄存器的结构
 struct context {
     uint64 ra;
     uint64 sp;
@@ -30,17 +30,17 @@ struct context {
     uint64 s11;
 };
 
-//修改一下PCB表的结构，这样后续代码能更清晰，汇编代码.S也可以写得足够简洁
+// 修改 PCB 表的结构
 struct thread {
-    struct context context;          //存寄存器的结构
-    char stack[STACK_SIZE]; /* the thread's stack */
+    struct context context;          // 存寄存器的结构
+    char stack[STACK_SIZE]; /* 线程的栈 */
     int state;             /* FREE, RUNNING, RUNNABLE */
-    int id;                // Add queue id
-    int enter_time;       //进入时间
-    int run_time;         //运行时间
+    int id;                // 队列 id
+    int enter_time;       // 进入时间
+    int run_time;         // 运行时间
 };
 
-struct thread all_thread[MAX_THREAD]; // PCB表
+struct thread all_thread[MAX_THREAD]; // PCB 表
 struct thread *current_thread;
 extern void thread_switch(uint64, uint64);
 
@@ -61,24 +61,23 @@ void thread_schedule(void) {
             // 计算响应比
             int waiting_time = current_time - t->enter_time; // 等待时间
             float response_ratio = (waiting_time + t->run_time) / (float)t->run_time; // 响应比
-            printf("Thread id %d has response ratio %f\n", t->id, response_ratio); // 打印响应比
 
             // 如果该线程的响应比大于当前最大响应比，则选择该线程
             if (response_ratio > max_response_ratio) {
                 max_response_ratio = response_ratio;
                 next_thread = t;
-                printf("Selected thread with id %d and response ratio %f\n", next_thread->id, next_thread->run_time);
             }
         }
     }
 
     if (next_thread == 0) {
+        // 如果没有可运行线程，直接返回
         printf("thread_schedule: no runnable threads\n");
         exit(-1);
     }
 
     if (current_thread != next_thread) {
-        /* switch threads? */
+        /* 切换线程 */
         next_thread->state = RUNNING;
         struct thread *prev_thread = current_thread;
         current_thread = next_thread;
@@ -94,10 +93,16 @@ void thread_create(void (*func)(), int id, int enter_time, int run_time) {
             break;
         }
     }
-    // YOUR CODE HERE
+
+    if (t == all_thread + MAX_THREAD) {
+        // 超出最大线程数
+        printf("Error: Maximum thread limit reached\n");
+        return;
+    }
+
     t->state = RUNNABLE;
     t->id = id;
-    t->context.sp = (uint64)((char*)&t->stack + STACK_SIZE); // sp在栈顶
+    t->context.sp = (uint64)((char*)&t->stack + STACK_SIZE); // sp 在栈顶
     t->context.ra = (uint64)func;
     t->enter_time = enter_time; // 设置进入时间
     t->run_time = run_time; // 设置运行时间
@@ -105,28 +110,22 @@ void thread_create(void (*func)(), int id, int enter_time, int run_time) {
 
 // 示例线程函数
 void thread_example(void) {
-    printf("Thread with id %d\n", current_thread->id);
+    printf("Thread with id %d starts\n", current_thread->id);
     printf("Last mem time is %d\n", current_time);
-    for (int i = 0; i < current_thread->run_time; i++) { // 修正循环条件
+    
+    // 模拟运行时间
+    for (int i = 0; i < current_thread->run_time; i++) {
         sleep(1); // 模拟运行时间
     }
+    
     current_time += current_thread->run_time; // 增加当前线程的运行时间到系统时间
     current_thread->state = FREE; // 完成后设置为 FREE
     thread_schedule();
 }
 
-int all_threads_done(void) {
-    // 检查所有线程是否都已完成
-    for (int i = 0; i < MAX_THREAD; i++) {
-        if (all_thread[i].state != FREE) {
-            return 0; // 还有线程未完成
-        }
-    }
-    return 1; // 所有线程都已完成
-}
-
 int main(int argc, char *argv[]) {
     thread_init();
+    
     // 创建线程，设置不同的进入时间和运行时间
     thread_create(thread_example, 1, 0, 20); // 线程第1个到，进入时间为0，运行时间20
     thread_create(thread_example, 2, 0, 10); // 线程第2个到，进入时间为0，运行时间10
@@ -134,6 +133,7 @@ int main(int argc, char *argv[]) {
     thread_create(thread_example, 4, 10, 5); // 线程第4个到，进入时间为10，运行时间5
     thread_create(thread_example, 5, 15, 30); // 线程第5个到，进入时间为15，运行时间30
     thread_create(thread_example, 6, 20, 10); // 线程第6个到，进入时间为20，运行时间10
-    thread_schedule(); 
+    thread_schedule();
+    
     exit(0);
 }

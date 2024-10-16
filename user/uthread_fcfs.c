@@ -130,16 +130,6 @@ void thread_example(void) {
     thread_schedule();
 }
 
-int all_threads_done(void) {
-    // 检查所有线程是否都已完成
-    for (int i = 0; i < MAX_THREAD; i++) {
-        if (all_thread[i].state != FREE) {
-            return 0; // 还有线程未完成
-        }
-    }
-    return 1; // 所有线程都已完成
-}
-
 int 
 main(int argc, char *argv[]) 
 {
