@@ -35,7 +35,7 @@ struct thread {
   struct context context;          //存寄存器的结构
   char       stack[STACK_SIZE]; /* the thread's stack */
   int        state;             /* FREE, RUNNING, RUNNABLE */
-  int priority;  // Add priority field
+  int id;  // Add queue id
   int enter_time;//进入时间
   int run_time;//运行时间
 };
@@ -57,17 +57,30 @@ thread_init(void)
 
 void thread_schedule(void) {
     struct thread *next_thread = 0;
-    int highest_priority = -1;
+    int first_id = MAX_THREAD;
 
     // 遍历所有线程，选择合适的线程调度
     for (int i = 0; i < MAX_THREAD; i++) {
         struct thread *t = &all_thread[i];
         // 仅考虑可运行状态且到达的线程
         if (t->state == RUNNABLE && t->enter_time <= current_time) {
-            if (t->priority > highest_priority) {
-                highest_priority = t->priority;
-                next_thread = t;
-                printf("change thread! current thread priority is %d\n",highest_priority);
+            if (t->id <= first_id) {//比较线程到达顺序，先到先服务
+            //如果存在多个进程同时到的话比较运行时间长短，时间短的进程先执行
+                if(t->id == first_id){
+                    if(t->run_time > next_thread->run_time){
+                        continue;//直接跳过
+                    }
+                    else{
+                        printf("The shorter thread is selected to be served!");
+                        first_id = t->id;
+                        next_thread = t;
+                        printf("change thread! current thread id is %d, runtime is %d\n",first_id, next_thread->run_time);
+                    }
+                }
+                else{
+                    first_id = t->id;
+                    next_thread = t;
+                    printf("change thread! current thread id is %d, runtime is %d\n",first_id, next_thread->run_time);}
             }
         }
     }
@@ -87,19 +100,18 @@ void thread_schedule(void) {
 }
 
 void 
-thread_create(void (*func)(), int priority,int enter_time,int run_time)
+thread_create(void (*func)(), int id,int enter_time,int run_time)
 {
   struct thread *t;
 
   for (t = all_thread; t < all_thread + MAX_THREAD; t++) {
     if (t->state == FREE) {
-      printf("Find empty thread!\n");
       break;
     };
   }
   // YOUR CODE HERE
   t->state = RUNNABLE;
-  t->priority = priority;
+  t->id = id;
   t->context.sp = (uint64)((char*)&t->stack + STACK_SIZE);//sp在栈顶
   t->context.ra = (uint64)func;
   t->enter_time = enter_time; // 设置进入时间
@@ -108,9 +120,9 @@ thread_create(void (*func)(), int priority,int enter_time,int run_time)
 
 // 示例线程函数
 void thread_example(void) {
+    printf("Thread with id %d\n", current_thread->id);
+    printf("Last mem time is %d\n",current_time);
     for (int i = 0; i <= current_thread->run_time; i++) {
-        printf("Thread with priority %d: running %d\n", current_thread->priority, i);
-        printf("Current time is %d\n",current_time);
         sleep(1); // 模拟运行时间
     }
     current_time += current_thread->run_time; // 增加当前线程的运行时间到系统时间
@@ -133,12 +145,12 @@ main(int argc, char *argv[])
 {
   thread_init();
    // 创建线程，设置不同的进入时间和运行时间
-  thread_create(thread_example, 1, 0, 10); // 线程1，进入时间为0，运行时间10
-  thread_create(thread_example, 2, 0, 20); // 线程2，进入时间为0，运行时间20
-  thread_create(thread_example, 3, 5, 15); // 线程3，进入时间为5，运行时间15
-  thread_create(thread_example, 4, 10, 5); // 线程4，进入时间为10，运行时间5
-  thread_create(thread_example, 5, 15, 30); // 线程5，进入时间为15，运行时间30
-  thread_create(thread_example, 6, 20, 10); // 线程6，进入时间为20，运行时间10
+  thread_create(thread_example, 1, 0, 20); // 线程第1个到，进入时间为0，运行时间20
+  thread_create(thread_example, 1, 0, 10); // 线程第1个到，进入时间为0，运行时间10
+  thread_create(thread_example, 3, 5, 15); // 线程第3个到，进入时间为5，运行时间15
+  thread_create(thread_example, 4, 10, 5); // 线程第4个到，进入时间为10，运行时间5
+  thread_create(thread_example, 5, 15, 30); // 线程第5个到，进入时间为15，运行时间30
+  thread_create(thread_example, 6, 20, 10); // 线程第6个到，进入时间为20，运行时间10
   thread_schedule(); 
   exit(0);
 }

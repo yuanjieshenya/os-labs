@@ -93,7 +93,6 @@ thread_create(void (*func)(), int priority,int enter_time,int run_time)
 
   for (t = all_thread; t < all_thread + MAX_THREAD; t++) {
     if (t->state == FREE) {
-      printf("Find empty thread!\n");
       break;
     };
   }
@@ -108,9 +107,9 @@ thread_create(void (*func)(), int priority,int enter_time,int run_time)
 
 // 示例线程函数
 void thread_example(void) {
+    printf("Thread with priority %d\n", current_thread->priority);
+    printf("Current time is %d\n",current_time);
     for (int i = 0; i <= current_thread->run_time; i++) {
-        printf("Thread with priority %d: running %d\n", current_thread->priority, i);
-        printf("Current time is %d\n",current_time);
         sleep(1); // 模拟运行时间
     }
     current_time += current_thread->run_time; // 增加当前线程的运行时间到系统时间
